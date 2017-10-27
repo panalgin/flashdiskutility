@@ -23,7 +23,14 @@ namespace FlashDiskUtility
         private void MainForm_Load(object sender, EventArgs e)
         {
             EventSink.Error += EventSink_Error;
+            EventSink.Written += EventSink_Written;
+
             DetectDriveInfos();
+        }
+
+        private void EventSink_Written(FileInfo info)
+        {
+            UpdateOutput(string.Format("Başarılı: [{0} - gizlendi]", info.Name));
         }
 
         private void EventSink_Error(string message)
@@ -106,7 +113,7 @@ namespace FlashDiskUtility
                         EventSink.InvokeError("Kaynak klasörde uygun mp3 dosyası bulunamadı.");
                     else
                     {
-                        FormatDrive(sourcePath);
+                        FormatDrive(destinationPath);
 
                         files.All(delegate (string file)
                         {
@@ -116,6 +123,8 @@ namespace FlashDiskUtility
 
                             File.SetAttributes(handle.FullName, FileAttributes.System | FileAttributes.ReadOnly | FileAttributes.Hidden);
 
+                            EventSink.InvokeWritten(handle);
+
                             return true;
                         });
                     }
@@ -123,10 +132,12 @@ namespace FlashDiskUtility
             }
         }
 
-        private void FormatDrive(string sourcePath)
+        private void FormatDrive(string destinationPath)
         {
-            var drive = DriveInfo.GetDrives().Where(q => q.Name == sourcePath).FirstOrDefault();
-            drive.VolumeLabel = DateTime.Now.ToFileTimeUtc().ToString();
+            /*var drive = DriveInfo.GetDrives().Where(q => q.Name == destinationPath).FirstOrDefault();
+
+            if (drive != null)
+            */
         }
 
         bool ValidatePaths(string sourcePath, string destinationPath)
