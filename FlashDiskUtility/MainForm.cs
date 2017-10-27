@@ -100,36 +100,63 @@ namespace FlashDiskUtility
 
         private void Start_Button_Click(object sender, EventArgs e)
         {
-            if (this.AvailableDrives_Combo.SelectedItem != null)
+            Task.Run(async () =>
             {
-                string sourcePath = this.SourcePath_Box.Text;
-                string destinationPath = this.AvailableDrives_Combo.SelectedItem.ToString().Split('-')[0].Replace(" ", "");
+                bool result = await ProcessFiles();
 
-                if (ValidatePaths(sourcePath, destinationPath))
+                this.Start_Button.BeginInvoke((MethodInvoker)delegate ()
                 {
-                    var files = Directory.EnumerateFiles(sourcePath, "*.*", SearchOption.TopDirectoryOnly).Where(q => q.EndsWith(".mp3"));
+                    this.Start_Button.Enabled = true;
+                });
+            });
+        }
 
-                    if (files.Count() == 0)
-                        EventSink.InvokeError("Kaynak klasörde uygun mp3 dosyası bulunamadı.");
-                    else
+        Task<bool> ProcessFiles()
+        {
+            try
+            {
+                this.Start_Button.BeginInvoke((MethodInvoker)delegate ()
+                {
+                    this.Start_Button.Enabled = false;
+                });
+
+                if (this.AvailableDrives_Combo.SelectedItem != null)
+                {
+                    string sourcePath = this.SourcePath_Box.Text;
+                    string destinationPath = this.AvailableDrives_Combo.SelectedItem.ToString().Split('-')[0].Replace(" ", "");
+
+                    if (ValidatePaths(sourcePath, destinationPath))
                     {
-                        FormatDrive(destinationPath);
+                        var files = Directory.EnumerateFiles(sourcePath, "*.*", SearchOption.AllDirectories).Where(q => q.EndsWith(".mp3") || q.EndsWith(".MP3"));
 
-                        files.All(delegate (string file)
+                        if (files.Count() == 0)
+                            EventSink.InvokeError("Kaynak klasörde uygun mp3 dosyası bulunamadı.");
+                        else
                         {
-                            var handle = new FileInfo(file);
-                            var savePath = Path.Combine(destinationPath, handle.Name);
-                            handle = handle.CopyTo(savePath, true);
+                            FormatDrive(destinationPath);
 
-                            File.SetAttributes(handle.FullName, FileAttributes.System | FileAttributes.ReadOnly | FileAttributes.Hidden);
+                            files.All(delegate (string file)
+                            {
+                                var handle = new FileInfo(file);
+                                var savePath = Path.Combine(destinationPath, handle.Name);
+                                handle = handle.CopyTo(savePath, true);
 
-                            EventSink.InvokeWritten(handle);
+                                File.SetAttributes(handle.FullName, FileAttributes.System | FileAttributes.ReadOnly | FileAttributes.Hidden);
 
-                            return true;
-                        });
+                                EventSink.InvokeWritten(handle);
+
+                                return true;
+                            });
+                        }
                     }
                 }
             }
+            catch(Exception ex)
+            {
+                EventSink.InvokeError(ex.Message);
+            }
+
+            return Task.FromResult(true);
         }
 
         private void FormatDrive(string destinationPath)

@@ -129,7 +129,7 @@
             this.MinimizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Flash Disk Hazırlayıcı - v0.0.1";
+            this.Text = "Flash Disk Hazırlayıcı - v0.0.3";
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
